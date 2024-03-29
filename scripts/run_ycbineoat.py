@@ -40,6 +40,8 @@ from multiprocessing import Pool
 import multiprocessing
 from functools import partial
 from itertools import repeat
+# import torch
+
 try:
   multiprocessing.set_start_method('spawn')
 except:
@@ -51,6 +53,11 @@ def run_one_video(data_dir,model_name,model_dir,cfg1,port):
   name = data_dir.split('/')[-2]
 
   cur_out_dir = '/tmp/BundleTrack/ycbineoat/{}/'.format(name)
+
+  # cur_out_dir = 'home/wty/project/BundleTrack/YCBInEOAT/ours/pose_output/{}'.format(name)
+
+  print("saving in ", cur_out_dir)
+
   os.system(f'mkdir -p {cur_out_dir}')
 
   cfg['data_dir'] = data_dir
@@ -58,16 +65,19 @@ def run_one_video(data_dir,model_name,model_dir,cfg1,port):
   cfg['model_name'] = model_name
   cfg['model_dir'] = model_dir
   cfg['debug_dir'] = cur_out_dir
-  cfg['LOG'] = 0
+  # cfg['LOG'] = 0
+  cfg['LOG'] = 4
   cfg['port'] = port
   tmp_config_dir = '/tmp/config_{}.yml'.format(name)
   with open(tmp_config_dir,'w') as ff:
     yaml.dump(cfg,ff)
 
-  cmd = f'{code_dir}/../build/bundle_track_ycbineoat {tmp_config_dir}'
+  # cmd = f'gdb {code_dir}/../build/bundle_track_ycbineoat  -c /var/crash/_usr_bin_k4aviewer.1000.crash -- {tmp_config_dir} '
+  cmd = f'{code_dir}/../build/bundle_track_ycbineoat {tmp_config_dir} '
   print(cmd)
   try:
     subprocess.call(cmd,shell=True)
+    # torch.cuda.empty_cache()
   except:
     pass
 
@@ -94,3 +104,6 @@ if __name__=='__main__':
     cfg = yaml.safe_load(ff)
 
   run_one_video(args.data_dir,args.model_name,args.model_dir,cfg,args.port)
+
+
+	

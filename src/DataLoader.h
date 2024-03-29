@@ -62,6 +62,7 @@ public:
   DataLoaderBase(std::shared_ptr<YAML::Node> yml1);
   ~DataLoaderBase();
   bool hasNext();
+  void setId(int newId);
 };
 
 class DataLoaderNOCS : public DataLoaderBase
@@ -82,12 +83,13 @@ public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
   int _start_digit;
   std::string _id_str_prefix;
+  std::vector<std::string> names;
 
 public:
   DataLoaderYcbineoat(std::shared_ptr<YAML::Node> yml1);
   ~DataLoaderYcbineoat();
+  void updateColorFiles(int currentId);
   std::shared_ptr<Frame> next();
-
 };
 
 

@@ -38,43 +38,136 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "Bundler.h"
 #include "DataLoader.h"
 
+// ros
+#include <ros/ros.h>
+#include <std_msgs/String.h>
+
+
+ros::Publisher camera_start_pub;
+bool process_new_frame = false;
+
+
+void poseStartCallback(const std_msgs::String::ConstPtr& msg)
+{
+  // check the received command signal
+  if (msg->data == "start")
+  {
+    process_new_frame = true;
+    printf("toggled process_new_frame as true\n");
+  }
+}
+
+
 
 int main(int argc, char **argv)
 {
-  std::shared_ptr<YAML::Node> yml(new YAML::Node);
-  if (argc<2)
-  {
-    printf("Please provide path to config file\n");
-    exit(1);
-  }
+  try {
+    // ros
+    ros::init(argc, argv, "bundle_track_node");
+    ros::NodeHandle nh;
 
-  std::string config_dir = std::string(argv[1]);
-  *yml = YAML::LoadFile(config_dir);
+    // configure the publisher
+    camera_start_pub = nh.advertise<std_msgs::String>("camera_command_topic", 10);
 
-  pcl::console::setVerbosityLevel(pcl::console::L_ERROR);
-  DataLoaderYcbineoat data_loader(yml);
+    ros::Subscriber pose_start_sub = nh.subscribe("pose_start_topic", 10, poseStartCallback);
 
-  const std::string base_dir = (*yml)["debug_dir"].as<std::string>();
-  std::string cmd = "rm -rf "+base_dir+" && mkdir -p "+base_dir+" && mkdir -p "+base_dir+"/color_viz/";
-  system(cmd.c_str());
+    printf("subscriber in bundletrack is initialized\n");
 
 
-  Eigen::Matrix4f ob_in_cam_last(Eigen::Matrix4f::Identity());
+    
+    //  original bundle track setup code
+    std::shared_ptr<YAML::Node> yml(new YAML::Node);
+    if (argc<2)
+    {
+      printf("Please provide path to config file\n");
+      exit(1);
+    }
 
-  Bundler bundler(yml,&data_loader);
+    printf("construct config dir\n");
 
-  while (data_loader.hasNext())
-  {
-    std::shared_ptr<Frame> frame = data_loader.next();
-    if (!frame) break;
-    const std::string index_str = frame->_id_str;
-    const std::string out_dir = (*yml)["debug_dir"].as<std::string>()+"/"+index_str+"/";
-    cv::imwrite(out_dir+index_str+"_color.png",frame->_color);
+    std::string config_dir = std::string(argv[1]);
+    *yml = YAML::LoadFile(config_dir);
 
-    Eigen::Matrix4f cur_in_model(data_loader._ob_in_cam0.inverse());
-    bundler.processNewFrame(frame);
+    pcl::console::setVerbosityLevel(pcl::console::L_ERROR);
+    DataLoaderYcbineoat data_loader(yml);
 
-    bundler.saveNewframeResult();
+    printf("construct debug dir\n");
 
+    const std::string base_dir = (*yml)["debug_dir"].as<std::string>();
+    std::string cmd = "rm -rf "+base_dir+" && mkdir -p "+base_dir+" && mkdir -p "+base_dir+"/color_viz/";
+    system(cmd.c_str());
+
+
+    Eigen::Matrix4f ob_in_cam_last(Eigen::Matrix4f::Identity());
+
+    Bundler bundler(yml,&data_loader);
+
+    int currentId = 0;
+    // check for both conditions
+    while ((ros::ok()))
+    {
+
+      // wait for a command signal before processing
+      ros::spinOnce();
+      printf("spinning");
+      if (!process_new_frame)
+      {
+        // sleep for a while while waiting for command
+        // printf("process_new_frame is false, sleep and continue");
+        ros::Duration(0.1).sleep();
+        continue;
+      }
+
+      
+      // update the color files list
+      data_loader.updateColorFiles(currentId);
+
+      // to track which frame i am
+      currentId++;
+
+      // reset the flag for next iteration
+      process_new_frame = false;
+
+      printf("BundleTrack: processing new frame\n");
+
+
+      // original bundle track code
+      std::shared_ptr<Frame> frame = data_loader.next();
+      printf("data loader next done\n");
+      if (!frame) break;
+      const std::string index_str = frame->_id_str;
+      printf("index str assign done\n");
+
+      const std::string out_dir = (*yml)["debug_dir"].as<std::string>()+"/"+index_str+"/";
+      printf("out dir assign done\n");
+
+      cv::imwrite(out_dir+index_str+"_color.png",frame->_color);
+      printf("imwrite done\n");
+
+      Eigen::Matrix4f cur_in_model(data_loader._ob_in_cam0.inverse());
+      printf("cur_in_model done\n");
+
+      bundler.processNewFrame(frame);
+      printf("processNewFrame done\n");
+
+      bundler.saveNewframeResult();
+      printf("saveNewframeResult done\n");
+
+
+      // ros::Duration(1).sleep();
+
+      // publish the "camera_start" command
+      std_msgs::String camera_start_msg;
+      camera_start_msg.data = "camera_start";
+      camera_start_pub.publish(camera_start_msg);
+      printf("camera_start_pub publish done\n");
+    }
+
+    // ros shutdown
+    ros::shutdown();
+
+    return 0;
+  } catch (const std::exception& e) {
+    printf("Error: %s\n", e.what());
   }
 }

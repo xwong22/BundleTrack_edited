@@ -33,6 +33,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 #include "Frame.h"
+#include <opencv2/imgproc/imgproc.hpp>
 
 zmq::context_t Frame::context;
 zmq::socket_t Frame::socket;
@@ -69,8 +70,9 @@ Frame::Frame(const cv::Mat &color, const cv::Mat &depth, const cv::Mat &depth_ra
   cudaMalloc(&_normal_gpu, n_pixels*sizeof(float4));
   cudaMalloc(&_color_gpu, n_pixels*sizeof(uchar4));
 
-
-  cv::cvtColor(_color, _gray, CV_BGR2GRAY);
+// edited
+  // cv::cvtColor(_color, _gray, CV_BGR2GRAY);
+  cv::cvtColor(_color, _gray, cv::COLOR_BGR2GRAY);
 
   updateDepthGPU();
   processDepth();

@@ -71,8 +71,11 @@ if __name__ == '__main__':
   io_arg = add_argument_group('In/Out', parser)
   model_arg = add_argument_group('Model', parser)
   code_dir = os.path.dirname(os.path.realpath(__file__))
-  model_arg.add_argument('--model', type=str, default=f'{code_dir}/release/models/indoor/',
+  # edited the path to delete "release"
+  model_arg.add_argument('--model', type=str, default=f'{code_dir}/models/indoor/',
                           help='model file or directory')
+#   model_arg.add_argument('--model', type=str, default=f'{code_dir}/release/models/indoor/',
+#                           help='model file or directory')
   model_arg.add_argument('--port', type=str, default='5555')
   model_arg.add_argument('--top_k', type=int, default=500,help='number of keypoints')
   model_arg.add_argument('--net_min_scale', type=float, default=None)

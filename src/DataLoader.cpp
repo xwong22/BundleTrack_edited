@@ -48,6 +48,12 @@ DataLoaderBase::~DataLoaderBase()
 
 }
 
+// we added
+void DataLoaderBase::setId(int newId)
+{
+  _id = newId;
+}
+
 
 
 bool DataLoaderBase::hasNext()
@@ -320,7 +326,7 @@ DataLoaderYcbineoat::DataLoaderYcbineoat(std::shared_ptr<YAML::Node> yml1) : Dat
   printf("data has %d images\n",files.size());
   assert(files.size()>0);
 
-  std::vector<std::string> names;
+  // std::vector<std::string> names;
   for (int i=0;i<files.size();i++)
   {
     auto f = files[i];
@@ -342,14 +348,84 @@ DataLoaderYcbineoat::~DataLoaderYcbineoat()
 
 }
 
+
+// void DataLoaderYcbineoat::updateColorFiles()
+// {
+//   // std::vector<std::string> names;
+//   const std::string data_dir = (*yml)["data_dir"].as<std::string>();
+//   std::string f = std::to_string(_id++) + ".png";
+//   printf("prepare to push back color_files");
+//   _color_files.push_back(data_dir+"/rgb/"+f);
+//   printf("push back done");
+//   std::vector<std::string> strs;
+//   boost::split(strs, f, boost::is_any_of("."));
+//   printf("prepare to push back names");
+//   names.push_back(strs.front());
+//   printf("push back names done");
+// }
+
+void DataLoaderYcbineoat::updateColorFiles(int currentId)
+{
+  const std::string data_dir = (*yml)["data_dir"].as<std::string>();
+
+  try {
+    std::string f = "image" + std::to_string(_id) + ".png";
+    printf("Prepare to push back color_files\n");
+
+    printf("f is %s", f.c_str());
+
+    // Check if the path construction is successful
+    std::string file_path = data_dir + "/rgb/" + f;
+
+    printf("file_path is %s", file_path.c_str());
+    
+    // Validate the constructed file path before pushing it back
+    if (!file_path.empty()) {
+      _color_files.push_back(file_path);
+      printf("Push back done\n");
+
+      // std::vector<std::string> strs;
+      // boost::split(strs, f, boost::is_any_of("."));
+      
+      // printf("Prepare to push back names\n");
+      // // Validate the constructed name before pushing it back
+      // if (!strs.empty()) {
+      //   // names.push_back(strs.front());
+      //   printf("Push back names done\n");
+      // } else {
+      //   printf("Error: Constructed name is empty!\n");
+      //   // Handle the error accordingly
+      // }
+    } else {
+      printf("Error: Constructed file path is empty!\n");
+      // Handle the error accordingly
+    }
+  } catch (const std::exception& e) {
+    printf("Error: %s\n", e.what());
+    // Handle the exception accordingly
+  }
+}
+
+
+
 std::shared_ptr<Frame> DataLoaderYcbineoat::next()
 {
   assert(_id<_color_files.size());
+
+  // Print the values of _id and _color_files.size()
+  std::cout << "_id: " << _id << ", _color_files.size(): " << _color_files.size() << std::endl;
+
   const std::string data_dir = (*yml)["data_dir"].as<std::string>();
+  printf("data dir assign done\n");
+
 
   std::string color_file = _color_files[_id];
+  printf("color file assign done\n");
+
   std::cout<<"color file: "<<color_file<<std::endl;
   cv::Mat color = cv::imread(color_file);
+  printf("imread file done\n");
+  
   std::string index_str;
   {
     std::vector<std::string> strs;
@@ -358,9 +434,14 @@ std::shared_ptr<Frame> DataLoaderYcbineoat::next()
     index_str = strs[0];
   }
 
+  printf("index str assign done\n");
+
+
   cv::Mat depth_raw;
   std::string depth_dir = data_dir+"/depth/"+index_str+".png";
   Utils::readDepthImage(depth_raw, depth_dir);
+
+  printf("read depth raw assign done\n");
 
   cv::Mat depth_sim;
   depth_sim = depth_raw.clone();
@@ -379,6 +460,9 @@ std::shared_ptr<Frame> DataLoaderYcbineoat::next()
 
   std::shared_ptr<Frame> frame(new Frame(color,depth,depth_raw,depth_sim, roi, pose, _id, index_str.substr(_start_digit,index_str.size()-_start_digit), _K, yml, NULL, _real_model));
   _id++;
+
+  printf("create new frame done\n");
+
 
   return frame;
 }

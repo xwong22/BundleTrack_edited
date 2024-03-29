@@ -308,14 +308,25 @@ void SiftManager::pruneMatches(std::shared_ptr<Frame> frameA, std::shared_ptr<Fr
       const auto &match = knn_matchesAB[i][k];
       auto pA = frameA->_keypts[match.queryIdx].pt;
       auto pB = frameB->_keypts[match.trainIdx].pt;
+      // edited
       int uA = std::round(pA.x);
+      printf("UA = %d\n",uA);
       int vA = std::round(pA.y);
+      printf("VA = %d\n",vA);
       int uB = std::round(pB.x);
+      printf("UB = %d\n",uB);
       int vB = std::round(pB.y);
+      printf("VB = %d\n",vB);
       if (!Utils::isPixelInsideImage(H, W, uA, vA) || !Utils::isPixelInsideImage(H, W, uB, vB)) continue;
       const auto &ptA = (*frameA->_cloud)(uA, vA);
       const auto &ptB = (*frameB->_cloud)(uB, vB);
-      if (ptA.z<0.1 || ptB.z<0.1) continue;
+      // edited
+      int c = ptA.z, d = ptB.z;
+      printf("ptA.x = %f,ptB.x = %f\n",ptA.x,ptB.x);
+      printf("ptA.y = %f,ptB.y = %f\n",ptA.y,ptB.y);
+      printf("ptA.z = %f,ptB.z = %f\n",ptA.z,ptB.z);
+    
+      if (ptA.z<0.1 || ptB.z<0.1) {printf("end because z<0.1\n");printf("ptA.z = %d.ptB.z = %d\n",ptA.z,ptB.z);continue;}
       auto PA_world = pcl::transformPointWithNormal(ptA, frameA->_pose_in_model);
       auto PB_world = pcl::transformPointWithNormal(ptB, frameB->_pose_in_model);
       float dist = pcl::geometry::distance(PA_world, PB_world);
@@ -791,7 +802,10 @@ void SiftManager::vizCorresBetween(std::shared_ptr<Frame> frameA, std::shared_pt
 
   cv::Mat out;
   cv::drawMatches( colorA, kptsA, colorB, kptsB, cv_matches, out, cv::Scalar::all(-1), cv::Scalar::all(-1), std::vector<char>(), cv::DrawMatchesFlags::NOT_DRAW_SINGLE_POINTS );
-  cv::imwrite(out_match_file, out, {CV_IMWRITE_JPEG_QUALITY,80});
+  
+  // edited
+  // cv::imwrite(out_match_file, out, {CV_IMWRITE_JPEG_QUALITY,80});
+  cv::imwrite(out_match_file, out, {cv::IMWRITE_JPEG_QUALITY, 80});
 
 }
 
