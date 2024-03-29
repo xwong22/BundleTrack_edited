@@ -4,3 +4,9 @@ build/
 *.pth*
 *.pkl
 lf-net-release/release/models
+
+YCBInEOAT/
+YCB_Objects/
+masks/
+segment-anything/
+# segment-anything/sam_vit_h_4b8939.pth
