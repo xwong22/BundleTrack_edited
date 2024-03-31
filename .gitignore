@@ -5,7 +5,6 @@ build/
 *.pkl
 lf-net-release/release/models
 
-YCBInEOAT/
 YCB_Objects/
 masks/
 # segment-anything/
