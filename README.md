@@ -1,3 +1,7 @@
+This is a clone of BundleTrack where we edited it to integrate it into our pipeline.
+
+---
+
 This is the official implementation of our paper:
 
 [BundleTrack: 6D Pose Tracking for Novel Objects without Instance or Category-Level 3D Models](https://arxiv.org/abs/2108.00516)
